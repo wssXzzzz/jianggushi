@@ -9,17 +9,17 @@ export async function generateMetadata(): Promise<Metadata> {
   const origin = protocol + "://" + host;
 
   return {
-    title: "年糕与糯米：银河星桥",
-    description: "两个小小光之守护者，修复银河星桥、帮助孤独云团找到回家的中秋绘本故事。",
+    title: "讲故事｜把孩子写进成长绘本",
+    description: "上传一张照片，为孩子制作关于礼貌、勇气、安全与合作的专属成长绘本。",
     openGraph: {
-      title: "年糕与糯米：银河星桥",
-      description: "一场关于勇气、理解与回家的星光冒险。",
+      title: "讲故事｜把孩子写进成长绘本",
+      description: "让孩子成为故事主角，在银河星桥的冒险中学习成长。",
       images: [new URL("/og.png", origin).toString()],
     },
     twitter: {
       card: "summary_large_image",
-      title: "年糕与糯米：银河星桥",
-      description: "一场关于勇气、理解与回家的星光冒险。",
+      title: "讲故事｜把孩子写进成长绘本",
+      description: "让孩子成为故事主角，在银河星桥的冒险中学习成长。",
       images: [new URL("/og.png", origin).toString()],
     },
   };

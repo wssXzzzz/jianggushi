@@ -1,98 +1,71 @@
-# vinext-starter
+# 讲故事
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+一个隐私优先的个性化儿童成长绘本 MVP。家长上传一张孩子照片，选择年龄和教育主题，孩子会成为《银河星桥》的故事主角。
 
-## Prerequisites
+## 当前能力
 
-- Node.js `>=22.13.0`
+- 一张照片代入十页预制绘本
+- 礼貌、勇气、安全、分享合作四个成长主题
+- DeepSeek 作为平台主故事模型
+- 智谱普通开放平台 API 作为平台备用模型
+- 用户可一次性使用自己的 DeepSeek 或智谱 API Key
+- 浏览器朗读、键盘翻页和手机轻扫翻页
+- Docker Compose 单服务部署
 
-## Quick Start
+孩子照片只在浏览器中通过临时对象地址裁切和显示，不会发送给本站服务端或故事模型。一次性 API Key 会经过服务端转发给对应模型，但不会保存或记录。
+
+## 本地运行
+
+需要 Node.js 22.13 或更高版本。
 
 ```bash
 npm install
+cp .env.example .env
 npm run dev
-npm run build
 ```
 
-This starter does not use `wrangler.jsonc`.
+不配置任何模型 Key 时，网站会使用经过审核的本地模板，完整体验仍然可用。
 
-## Included Shape
+## 模型配置
 
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
+在 `.env` 中按需填写：
 
-## Workspace Auth Headers
-
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
+```dotenv
+DEEPSEEK_API_KEY=
+DEEPSEEK_MODEL=deepseek-v4-flash
+ZHIPU_API_KEY=
+ZHIPU_MODEL=glm-4.7-flash
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+智谱配置必须使用普通开放平台 API Key。GLM Coding Plan 只用于编码工具，不应作为网站生产接口。
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
+平台模式会先调用 DeepSeek；调用不可用时再尝试智谱。两个平台 Key 都未配置或均不可用时，返回本地模板故事。
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
+## Docker Compose
 
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
+```bash
+cp .env.example .env
+docker compose up -d --build
+docker compose ps
+```
 
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
+默认监听 VPS 的 `3000` 端口。可以在 `.env` 中修改 `APP_PORT`，再通过 VPS 现有的 Nginx 或 Caddy 反向代理并启用 HTTPS。
 
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
+更新：
 
-## Useful Commands
+```bash
+git pull
+docker compose up -d --build
+```
 
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
+## 验证
 
-## Learn More
+```bash
+npm test
+npm run lint
+docker compose config
+```
 
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+## 当前明确边界
+
+这一版是“本地头像代入”，不是身份保持的 AI 图像重绘。照片不会被模型分析，也不会被保存。等确定支持参考图、局部编辑和人物一致性的图像模型后，再增加绘本化处理。
