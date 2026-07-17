@@ -475,6 +475,41 @@ select:focus-visible {
   box-shadow: 0 4px 14px rgba(7, 20, 45, 0.15);
 }
 
+.portrait-mode {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 4px 0;
+}
+
+.portrait-mode button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.76);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.portrait-mode button.selected {
+  border-color: rgba(71, 119, 223, 0.52);
+  background: rgba(227, 236, 255, 0.92);
+  color: #315bad;
+  font-weight: 700;
+}
+
+.portrait-mode button:disabled {
+  cursor: wait;
+  opacity: 0.48;
+}
+
+.portrait-mode span {
+  margin-left: auto;
+  color: #478063;
+  font-size: 9px;
+}
+
 .photo-controls {
   display: grid;
   grid-template-columns: 1fr 1fr;

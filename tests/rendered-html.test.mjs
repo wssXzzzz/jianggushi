@@ -31,7 +31,9 @@ test("renders the personalized storybook creator", async () => {
   const html = await response.text();
   assert.match(html, /<title>讲故事｜把孩子写进成长绘本<\/title>/);
   assert.match(html, /孩子是故事里的主角/);
-  assert.match(html, /照片不上传/);
+  assert.match(html, /本机卡通化/);
+  assert.match(html, /保留五官的卡通角色/);
+  assert.match(html, /不会保存照片/);
   assert.match(html, /平台模型（推荐）/);
   assert.match(html, /星光邮差/);
   assert.match(html, /迷雾安全队/);
