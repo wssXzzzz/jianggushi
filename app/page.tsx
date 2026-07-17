@@ -283,7 +283,7 @@ export default function Home() {
           </div>
 
           <div className="cover-preview" aria-label="个性化绘本封面预览">
-            <Image src="/story/01-cover.png" alt="银河星桥绘本封面" fill priority sizes="(max-width: 900px) 100vw, 56vw" />
+            <Image src="/story/galaxy/01-cover.png" alt="银河星桥绘本封面" fill priority sizes="(max-width: 900px) 100vw, 56vw" />
             <div className="cover-vignette" />
             {portraitUrl && (
               <div className="face-slot preview-face" style={previewFaceStyle}>

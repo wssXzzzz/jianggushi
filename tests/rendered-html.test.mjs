@@ -66,6 +66,7 @@ test("returns all four audited templates when platform keys are absent", async (
     assert.equal(body.mode, "template");
     assert.equal(body.pages.length, 10);
     assert.equal(body.pages[0].title, expectedTitle);
+    assert.ok(body.pages.every((page) => page.image.startsWith("/story/galaxy/")));
     assert.match(body.pages[0].text, /6岁的.*小满/);
     assert.match(body.notice, /模板故事/);
   }
