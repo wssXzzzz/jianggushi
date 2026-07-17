@@ -1,42 +1,42 @@
-# Karpathy Guidelines
+# Karpathy 编码准则（Karpathy Guidelines）
 
-These rules govern all coding work in this repository.
+以下规则适用于本仓库内的所有编码工作。中文说明为主，同时保留英文原则名称，便于不同编码代理识别。
 
-## Think Before Coding
+## 编码前先想清楚（Think Before Coding）
 
-- State assumptions before implementation.
-- When requirements are ambiguous, ask or list the valid interpretations.
-- Prefer a simpler solution when it meets the same user-visible goal.
+- 实现前明确说明假设，不做隐藏假设。
+- 需求存在歧义时，先询问或列出所有合理理解，不擅自选择。
+- 如果更简单的方案能达到同样的用户目标，应优先采用并主动说明。
 
-## Simplicity First
+## 简单优先（Simplicity First）
 
-- Implement only what the current requirement needs.
-- Do not add speculative abstractions, configuration, or fallback behavior.
-- If the same behavior can be expressed clearly with much less code, rewrite it.
+- 只实现当前需求真正需要的内容。
+- 不添加未被要求的抽象层、配置项、预留扩展或兜底行为。
+- 如果相同行为可以用明显更少且清晰的代码实现，应当重写。
 
-## Surgical Changes
+## 手术式修改（Surgical Changes）
 
-- Change only files and lines required by the task.
-- Preserve the surrounding style and avoid unrelated cleanup.
-- Every changed line must trace directly to a stated requirement.
+- 只修改完成当前任务所必需的文件和代码行。
+- 保持现有代码风格，不顺手清理或优化无关内容。
+- 每一行改动都必须能直接追溯到明确的用户需求。
 
-## Goal-Driven Execution
+## 目标驱动执行（Goal-Driven Execution）
 
-- Define verifiable completion criteria before coding.
-- Run relevant builds, tests, and runtime checks before claiming completion.
-- Report remaining gaps explicitly instead of hiding them behind placeholders.
+- 编码前定义可以验证的完成标准。
+- 宣布完成前，必须运行相关构建、测试和实际运行检查。
+- 明确说明仍存在的缺口，不使用占位实现掩盖问题。
 
-## Current MVP Completion Criteria
+## 当前 MVP 完成标准（Current MVP Completion Criteria）
 
-- A parent can upload one child photo and keep it local to the browser.
-- The child portrait is visibly placed into all ten pages of each available template.
-- Name, age, and the selected education template personalize the story.
-- Galaxy Bridge, Star Mail, Bamboo Safety, and Honest Star each provide ten reviewed pages.
-- Story generation supports platform DeepSeek, platform Zhipu fallback, and one-time user keys.
-- The site remains demonstrable without configured model keys.
-- Docker Compose can build and start the application.
-- Build, lint, tests, and secret scanning pass before the branch is pushed.
+- 家长可以上传一张孩子照片，并确保照片只保留在当前浏览器中。
+- 孩子头像会清晰地出现在每个可用模板的全部十页中。
+- 故事会根据孩子姓名、年龄和所选教育模板进行个性化。
+- 《银河星桥》《星光邮差》《迷雾安全队》《诚实星石》各包含十页经过审核的内容。
+- 故事生成支持平台 DeepSeek、平台智谱备用模型，以及用户一次性 API Key。
+- 未配置任何模型 Key 时，网站仍可完整演示。
+- Docker Compose 可以成功构建并启动应用。
+- 推送分支前，构建、Lint、测试和敏感信息扫描必须全部通过。
 
-## Explicit Non-Goal
+## 当前明确不做（Explicit Non-Goal）
 
-Identity-preserving AI illustration is not part of this MVP until an image-editing provider is selected. The MVP uses local browser portrait placement and must label that behavior honestly.
+在选定合规的图片编辑服务之前，当前 MVP 不包含身份保持的 AI 绘本重绘。现阶段只使用浏览器本地头像代入，并且必须在界面和文档中如实说明。
