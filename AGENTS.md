@@ -29,8 +29,9 @@ These rules govern all coding work in this repository.
 ## Current MVP Completion Criteria
 
 - A parent can upload one child photo and keep it local to the browser.
-- The child portrait is visibly placed into all ten pages of the Galaxy Bridge template.
-- Name, age, and education theme personalize the story.
+- The child portrait is visibly placed into all ten pages of each available template.
+- Name, age, and the selected education template personalize the story.
+- Galaxy Bridge, Star Mail, Bamboo Safety, and Honest Star each provide ten reviewed pages.
 - Story generation supports platform DeepSeek, platform Zhipu fallback, and one-time user keys.
 - The site remains demonstrable without configured model keys.
 - Docker Compose can build and start the application.

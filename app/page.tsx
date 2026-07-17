@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChangeEvent, CSSProperties, FormEvent, TouchEvent } from "react";
-import { baseStoryPages, lessonOptions } from "@/lib/story";
+import { baseStoryPages, getStoryTemplate, storyTemplates } from "@/lib/story";
 import type { StoryPage } from "@/lib/story";
 
 type Provider = "platform" | "deepseek" | "zhipu";
@@ -22,7 +22,7 @@ function clampPage(value: number, pageCount: number) {
 export default function Home() {
   const [name, setName] = useState("");
   const [age, setAge] = useState(6);
-  const [lesson, setLesson] = useState("礼貌待人");
+  const [templateId, setTemplateId] = useState("galaxy-bridge");
   const [provider, setProvider] = useState<Provider>("platform");
   const [apiKey, setApiKey] = useState("");
   const [photoUrl, setPhotoUrl] = useState("");
@@ -39,6 +39,7 @@ export default function Home() {
   const photoObjectUrl = useRef<string | null>(null);
   const touchStart = useRef<number | null>(null);
   const page = pages[pageIndex];
+  const selectedTemplate = getStoryTemplate(templateId);
 
   useEffect(
     () => () => {
@@ -106,7 +107,7 @@ export default function Home() {
         body: JSON.stringify({
           name: name.trim(),
           age,
-          lesson,
+          templateId,
           provider,
           apiKey: provider === "platform" ? undefined : apiKey.trim(),
         }),
@@ -252,7 +253,7 @@ export default function Home() {
                 <Image src={photoUrl} alt="孩子在绘本中的头像预览" fill unoptimized sizes="10vw" />
               </div>
             )}
-            <div className="preview-title"><small>银河星桥</small><strong>{name.trim() || "孩子"}的星光冒险</strong></div>
+            <div className="preview-title"><small>{selectedTemplate.lesson}</small><strong>{name.trim() || "孩子"}的{selectedTemplate.title}</strong></div>
           </div>
         </div>
 
@@ -264,14 +265,17 @@ export default function Home() {
 
           <div className="split-fields">
             <label><span className="field-label">年龄</span><select className="text-input" value={age} onChange={(event) => setAge(Number(event.target.value))}>{Array.from({ length: 10 }, (_, index) => index + 3).map((item) => <option key={item} value={item}>{item} 岁</option>)}</select></label>
-            <label><span className="field-label">故事模板</span><select className="text-input" disabled><option>银河星桥</option></select></label>
+            <label><span className="field-label">成长主题</span><input className="text-input" value={selectedTemplate.lesson} disabled /></label>
           </div>
 
-          <fieldset className="lesson-fieldset">
-            <legend className="field-label">这次想学会什么？</legend>
-            <div className="lesson-grid">
-              {lessonOptions.map((item) => (
-                <button type="button" key={item.value} className={lesson === item.value ? "selected" : ""} onClick={() => setLesson(item.value)}><small>{item.icon}</small>{item.label}</button>
+          <fieldset className="template-fieldset">
+            <legend className="field-label">选择一个成长故事</legend>
+            <div className="template-grid">
+              {storyTemplates.map((template) => (
+                <button type="button" key={template.id} className={templateId === template.id ? "selected" : ""} onClick={() => setTemplateId(template.id)}>
+                  <span><strong>{template.title}</strong><small>{template.ageRange} · {template.lesson}</small></span>
+                  <i>{template.summary}</i>
+                </button>
               ))}
             </div>
           </fieldset>

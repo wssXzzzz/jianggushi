@@ -357,38 +357,57 @@ select:focus-visible {
   gap: 12px;
 }
 
-.lesson-fieldset {
+.template-fieldset {
   margin: 0;
   border: 0;
   padding: 0;
 }
 
-.lesson-grid {
+.template-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
 
-.lesson-grid button {
-  min-height: 64px;
+.template-grid button {
+  min-height: 90px;
   border: 1px solid var(--line);
   border-radius: 12px;
-  padding: 8px 4px;
+  padding: 11px 12px;
   background: rgba(255, 255, 255, 0.74);
   color: #566077;
   cursor: pointer;
-  font-size: 11px;
+  text-align: left;
 }
 
-.lesson-grid button small {
+.template-grid button span,
+.template-grid button strong,
+.template-grid button small,
+.template-grid button i {
   display: block;
-  margin-bottom: 4px;
-  color: #ae7523;
+}
+
+.template-grid button strong {
+  color: var(--ink);
   font-family: "Songti SC", STSong, serif;
+  font-size: 13px;
+}
+
+.template-grid button small {
+  margin-top: 3px;
+  color: #ae7523;
   font-size: 10px;
 }
 
-.lesson-grid button.selected {
+.template-grid button i {
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 9px;
+  font-style: normal;
+  line-height: 1.45;
+}
+
+.template-grid button.selected {
   border-color: rgba(71, 119, 223, 0.56);
   background: rgba(231, 238, 255, 0.86);
   color: #274c9d;
@@ -835,8 +854,8 @@ select:focus-visible {
     padding: 22px 17px;
   }
 
-  .lesson-grid {
-    grid-template-columns: 1fr 1fr;
+  .template-grid {
+    grid-template-columns: 1fr;
   }
 
   .split-fields,
