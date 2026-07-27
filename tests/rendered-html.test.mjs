@@ -1,87 +1,90 @@
 import assert from "node:assert/strict";
-import { access, readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 
-const developmentPreviewMeta =
-  /<meta(?=[^>]*\bname=["']codex-preview["'])(?=[^>]*\bcontent=["']development["'])[^>]*>/i;
-const templateRoot = new URL("../", import.meta.url);
-const previewRoot = new URL("../app/_sites-preview/", import.meta.url);
-
-async function render() {
+async function getWorker() {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
-  const { default: worker } = await import(workerUrl.href);
-
-  return worker.fetch(
-    new Request("http://localhost/", {
-      headers: { accept: "text/html" },
-    }),
-    {
-      ASSETS: {
-        fetch: async () => new Response("Not found", { status: 404 }),
-      },
-    },
-    {
-      waitUntil() {},
-      passThroughOnException() {},
-    },
-  );
+  return (await import(workerUrl.href)).default;
 }
 
-test("server-renders the starter loading skeleton", async () => {
-  const response = await render();
+const env = {
+  ASSETS: {
+    fetch: async () => new Response("Not found", { status: 404 }),
+  },
+};
+
+const ctx = {
+  waitUntil() {},
+  passThroughOnException() {},
+};
+
+test("renders the personalized storybook creator", async () => {
+  const worker = await getWorker();
+  const response = await worker.fetch(
+    new Request("http://localhost/", { headers: { accept: "text/html" } }),
+    env,
+    ctx,
+  );
+
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
-
   const html = await response.text();
-  assert.match(html, developmentPreviewMeta);
-  assert.match(html, /<title>Your site is taking shape<\/title>/i);
-  assert.match(html, /Codex is working/);
-  assert.match(html, /Your site is taking shape/);
-  assert.match(html, /Codex is building the first version/);
-  assert.match(html, /react-loading-skeleton/);
-  assert.match(html, /role="status"/);
+  assert.match(html, /<title>讲故事｜把孩子写进成长绘本<\/title>/);
+  assert.match(html, /孩子是故事里的主角/);
+  assert.match(html, /本机卡通化/);
+  assert.match(html, /保留五官的卡通角色/);
+  assert.match(html, /不会保存照片/);
+  assert.match(html, /平台模型（推荐）/);
+  assert.match(html, /星光邮差/);
+  assert.match(html, /迷雾安全队/);
+  assert.match(html, /诚实星石/);
+  assert.match(html, /生成孩子的绘本/);
 });
 
-test("keeps the loading skeleton scoped and disposable", async () => {
-  const [preview, css, page, layout, packageJson, files] = await Promise.all([
-    readFile(new URL("SkeletonPreview.tsx", previewRoot), "utf8"),
-    readFile(new URL("preview.css", previewRoot), "utf8"),
-    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../package.json", import.meta.url), "utf8"),
-    readdir(previewRoot),
-  ]);
+test("returns all four audited templates when platform keys are absent", async () => {
+  const worker = await getWorker();
+  const templates = [
+    ["galaxy-bridge", "小满的银河星桥"],
+    ["star-mail", "小满的星光邮差"],
+    ["bamboo-safety", "小满的迷雾安全队"],
+    ["honest-star", "小满的诚实星石"],
+  ];
 
-  assert.deepEqual(files.sort(), ["SkeletonPreview.tsx", "preview.css"]);
-  assert.match(preview, /from "react-loading-skeleton"/);
-  assert.match(preview, /baseColor="#eceae7"/);
-  assert.match(preview, /highlightColor="#f9f8f6"/);
-  assert.match(preview, /duration=\{2\.8\}/);
-  assert.match(preview, /sites-skeleton-search-placeholder/);
-  assert.match(packageJson, /"react-loading-skeleton": "3\.5\.0"/);
+  for (const [templateId, expectedTitle] of templates) {
+    const response = await worker.fetch(
+      new Request("http://localhost/api/story/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: "小满", age: 6, templateId, provider: "platform" }),
+      }),
+      env,
+      ctx,
+    );
 
-  const shellIndex = preview.indexOf('className="sites-skeleton-shell"');
-  const statusIndex = preview.indexOf('className="sites-skeleton-status"');
-  assert.ok(shellIndex >= 0 && statusIndex > shellIndex);
-  assert.match(css, /position:\s*fixed/);
-  assert.match(css, /inset:\s*0/);
-  assert.match(css, /opacity:\s*0\.52/);
-  assert.match(css, /prefers-reduced-motion:\s*reduce/);
-  assert.doesNotMatch(css, /#020617|canvas|pets|progress/i);
-  assert.doesNotMatch(
-    preview,
-    /loading-spinner|status-mark|status-progress|canvas|cookie|random/i,
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.mode, "template");
+    assert.equal(body.pages.length, 10);
+    assert.equal(body.pages[0].title, expectedTitle);
+    assert.ok(body.pages.every((page) => page.image.startsWith("/story/galaxy/")));
+    assert.match(body.pages[0].text, /6岁的.*小满/);
+    assert.match(body.notice, /模板故事/);
+  }
+});
+
+test("rejects malformed personalization input", async () => {
+  const worker = await getWorker();
+  const response = await worker.fetch(
+    new Request("http://localhost/api/story/generate", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: "", age: 2, templateId: "unknown", provider: "platform" }),
+    }),
+    env,
+    ctx,
   );
 
-  assert.match(page, /export const metadata:\s*Metadata/);
-  assert.match(page, /"codex-preview": "development"/);
-  assert.match(page, /<SkeletonPreview \/>/);
-  assert.match(layout, /title:\s*"Starter Project"/);
-  assert.doesNotMatch(layout, /codex-preview|_sites-preview|themeColor|\bViewport\b/);
-  assert.doesNotMatch(css, /(^|\s)(html|body)\s*\{/m);
-
-  await assert.rejects(
-    access(new URL("public/_sites-preview", templateRoot)),
-  );
+  assert.equal(response.status, 400);
+  const body = await response.json();
+  assert.match(body.error, /孩子名字/);
 });

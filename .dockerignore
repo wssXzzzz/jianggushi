@@ -1,0 +1,13 @@
+.git
+.next
+.vinext
+.wrangler
+dist
+node_modules
+coverage
+.env
+.env.*
+!.env.example
+vps-package
+*.zip
+银河星桥绘本.html

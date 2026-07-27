@@ -2,176 +2,177 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { TouchEvent } from "react";
+import type { ChangeEvent, CSSProperties, FormEvent, TouchEvent } from "react";
+import { createStorybookPortrait } from "@/lib/cartoonize";
+import { baseStoryPages, getStoryTemplate, storyTemplates } from "@/lib/story";
+import type { StoryPage } from "@/lib/story";
 
-type StoryPage = {
-  chapter: string;
-  title: string;
-  text: string;
-  quote?: string;
-  speaker?: string;
-  image: string;
-  alt: string;
-  align: "left" | "right" | "bottom";
+type Provider = "platform" | "deepseek" | "zhipu";
+type PortraitMode = "storybook" | "original";
+
+const supportedPhotoTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+type GenerateResponse = {
+  pages: StoryPage[];
+  mode: "ai" | "template";
+  provider: string;
+  notice?: string;
 };
 
-const storyPages: StoryPage[] = [
-  {
-    chapter: "银河星桥",
-    title: "年糕与糯米",
-    text: "中秋夜，星灯镇的银河突然少了一块。两个小小守护者，踏上了一场关于勇气、理解与回家的星光冒险。",
-    quote: "只要我们在一起，黑夜也能找到光。",
-    image: "/story/01-cover.png",
-    alt: "年糕和糯米站在星灯镇屋顶，仰望断裂的银河星桥",
-    align: "right",
-  },
-  {
-    chapter: "第一章",
-    title: "星灯熄灭了",
-    text: "正当月亮升到屋檐上，整条长街的灯忽然一盏接一盏暗了下来。年糕护住最后一粒微光，糯米用小手替它挡住夜风。",
-    quote: "哥哥，它在发抖。我们送它回家吧！",
-    speaker: "糯米",
-    image: "/story/02-scene.png",
-    alt: "年糕和糯米在熄灭的灯笼街上守护最后一粒星光",
-    align: "right",
-  },
-  {
-    chapter: "第二章",
-    title: "月饼盒里的来信",
-    text: "阁楼里的月饼盒突然叮咚一响，一只由星尘变成的月兔跳了出来。它捧着破碎的星石：银河星桥断了，星灯才迷了路。",
-    quote: "要修好星桥，必须找回三块星石。",
-    speaker: "月兔",
-    image: "/story/03-scene.png",
-    alt: "月兔从月饼盒中现身，向年糕和糯米展示破碎的星石",
-    align: "right",
-  },
-  {
-    chapter: "第三章",
-    title: "牵手穿过星光门",
-    text: "年糕举起星石，屋顶上便张开一圈蓝金色的星门。风把瓦片吹得沙沙响，他回头握紧糯米的手，两个人一起跑向银河。",
-    quote: "抓紧我。三、二、一——出发！",
-    speaker: "年糕",
-    image: "/story/04-scene.png",
-    alt: "年糕牵着糯米穿过屋顶上的星光传送门",
-    align: "left",
-  },
-  {
-    chapter: "第四章",
-    title: "风谷的第一块星石",
-    text: "第一块星石落在浮空风谷的另一端。年糕把银河光连成稳稳的护栏，糯米踩着一圈圈时空涟漪跃过浮石——一个稳住路，一个勇敢向前。",
-    quote: "我的光给你铺路，你的勇气带我们过去。",
-    speaker: "年糕",
-    image: "/story/05-scene.png",
-    alt: "年糕用银河光稳住浮石，糯米跨越风谷取得星石",
-    align: "left",
-  },
-  {
-    chapter: "第五章",
-    title: "时间迷宫",
-    text: "银竹林里的路不停重复，连落叶都一遍遍飘回枝头。糯米静下心，把手按在地面；蓝色的时间环散开，唯一真正的路终于亮了起来。",
-    quote: "跑得快不算厉害，知道往哪儿跑才厉害！",
-    speaker: "糯米",
-    image: "/story/06-scene.png",
-    alt: "糯米在银色竹林中打开时间环，年糕用星光指出正确道路",
-    align: "right",
-  },
-  {
-    chapter: "第六章",
-    title: "云背后的哭声",
-    text: "最后一块星石，被大家害怕的“无声兽”抱在怀里。可年糕看见的不是怪兽，而是一团孤零零的云。糯米掰开月饼，把更大的一半递了过去。",
-    quote: "你不用一个人躲在黑夜里。跟我们回家吧。",
-    speaker: "糯米",
-    image: "/story/07-scene.png",
-    alt: "年糕和糯米用月饼安慰抱着星石哭泣的云团",
-    align: "left",
-  },
-  {
-    chapter: "第七章",
-    title: "两束光，一座桥",
-    text: "云团松开双手，最后的星石飞上天空。年糕的银河光化成万千星线，糯米的时空环让碎片回到原位。两束不同的光，织成了同一座桥。",
-    quote: "真正强大的光，是愿意和另一束光并肩。",
-    image: "/story/08-scene.png",
-    alt: "年糕与糯米合力用银河光和时间环修复星桥",
-    align: "bottom",
-  },
-  {
-    chapter: "第八章",
-    title: "星灯重新亮起",
-    text: "他们沿着新生的星桥奔向故乡。脚步每落下一次，星灯镇就亮起一片金色灯火。河面、窗边和每一双等待的眼睛，都重新装满了星光。",
-    quote: "看！我们的家认出我们啦！",
-    speaker: "糯米",
-    image: "/story/09-scene.png",
-    alt: "年糕和糯米沿修复的星桥跑回重新点亮的星灯镇",
-    align: "left",
-  },
-  {
-    chapter: "尾声",
-    title: "屋顶上的约定",
-    text: "月饼还温热，银河已经完整。小云团提着自己的星灯，月兔在兄弟俩中间打起了哈欠。年糕和糯米约好：哪里有人害怕，哪里就会有他们的光。",
-    quote: "真正的英雄，是让每一颗心都找到回家的路。",
-    image: "/story/10-scene.png",
-    alt: "年糕和糯米与月兔、小云团在屋顶分享月饼并仰望银河",
-    align: "right",
-  },
-];
-
-function clampPage(value: number) {
-  return Math.max(0, Math.min(storyPages.length - 1, value));
+function clampPage(value: number, pageCount: number) {
+  return Math.max(0, Math.min(pageCount - 1, value));
 }
 
 export default function Home() {
+  const [name, setName] = useState("");
+  const [age, setAge] = useState(6);
+  const [templateId, setTemplateId] = useState("galaxy-bridge");
+  const [provider, setProvider] = useState<Provider>("platform");
+  const [apiKey, setApiKey] = useState("");
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [cartoonUrl, setCartoonUrl] = useState("");
+  const [portraitMode, setPortraitMode] = useState<PortraitMode>("storybook");
+  const [photoZoom, setPhotoZoom] = useState(1.15);
+  const [photoY, setPhotoY] = useState(50);
+  const [consent, setConsent] = useState(false);
+  const [pages, setPages] = useState<StoryPage[]>(baseStoryPages);
   const [pageIndex, setPageIndex] = useState(0);
+  const [view, setView] = useState<"create" | "read">("create");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isCartoonizing, setIsCartoonizing] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const photoObjectUrl = useRef<string | null>(null);
+  const cartoonObjectUrl = useRef<string | null>(null);
+  const photoVersion = useRef(0);
   const touchStart = useRef<number | null>(null);
-  const page = storyPages[pageIndex];
+  const page = pages[pageIndex];
+  const selectedTemplate = getStoryTemplate(templateId);
+  const portraitUrl = portraitMode === "storybook" && cartoonUrl ? cartoonUrl : photoUrl;
+
+  useEffect(
+    () => () => {
+      photoVersion.current += 1;
+      if (photoObjectUrl.current) URL.revokeObjectURL(photoObjectUrl.current);
+      if (cartoonObjectUrl.current) URL.revokeObjectURL(cartoonObjectUrl.current);
+    },
+    [],
+  );
 
   const stopSpeaking = useCallback(() => {
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-    }
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     setIsSpeaking(false);
   }, []);
 
   const goToPage = useCallback(
     (next: number) => {
       stopSpeaking();
-      setPageIndex(clampPage(next));
+      setPageIndex(clampPage(next, pages.length));
     },
-    [stopSpeaking],
+    [pages.length, stopSpeaking],
   );
 
   useEffect(() => {
+    if (view !== "read") return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "ArrowRight" || event.key === "PageDown") {
-        goToPage(pageIndex + 1);
-      }
-      if (event.key === "ArrowLeft" || event.key === "PageUp") {
-        goToPage(pageIndex - 1);
-      }
+      if (event.key === "ArrowRight" || event.key === "PageDown") goToPage(pageIndex + 1);
+      if (event.key === "ArrowLeft" || event.key === "PageUp") goToPage(pageIndex - 1);
       if (event.key === "Home") goToPage(0);
-      if (event.key === "End") goToPage(storyPages.length - 1);
+      if (event.key === "End") goToPage(pages.length - 1);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [goToPage, pageIndex]);
+  }, [goToPage, pageIndex, pages.length, view]);
 
-  useEffect(() => stopSpeaking, [stopSpeaking]);
-
-  const readPage = () => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    if (isSpeaking) {
-      stopSpeaking();
+  const onPhotoChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    setError("");
+    if (!file) return;
+    if (!supportedPhotoTypes.has(file.type)) {
+      setError("请选择 JPG、PNG 或 WebP 图片。");
       return;
     }
+    if (file.size > 8 * 1024 * 1024) {
+      setError("照片不能超过 8MB。");
+      return;
+    }
+
+    const version = photoVersion.current + 1;
+    photoVersion.current = version;
+    if (photoObjectUrl.current) URL.revokeObjectURL(photoObjectUrl.current);
+    if (cartoonObjectUrl.current) URL.revokeObjectURL(cartoonObjectUrl.current);
+    const sourceUrl = URL.createObjectURL(file);
+    photoObjectUrl.current = sourceUrl;
+    cartoonObjectUrl.current = null;
+    setPhotoUrl(sourceUrl);
+    setCartoonUrl("");
+    setPortraitMode("storybook");
+    setIsCartoonizing(true);
+
+    try {
+      const cartoon = await createStorybookPortrait(sourceUrl);
+      const resultUrl = URL.createObjectURL(cartoon);
+      if (photoVersion.current !== version) return URL.revokeObjectURL(resultUrl);
+      cartoonObjectUrl.current = resultUrl;
+      setCartoonUrl(resultUrl);
+    } catch {
+      if (photoVersion.current !== version) return;
+      setPortraitMode("original");
+      setError("本地卡通化失败，已保留原始照片，你仍可继续制作绘本。");
+    } finally {
+      if (photoVersion.current === version) setIsCartoonizing(false);
+    }
+  };
+
+  const generateStory = async (event: FormEvent) => {
+    event.preventDefault();
+    setError("");
+    setNotice("");
+    if (!name.trim()) return setError("先填写孩子的名字或昵称。");
+    if (!photoUrl) return setError("请上传一张正面清晰的照片。");
+    if (isCartoonizing) return setError("请等待本地卡通角色生成完成。");
+    if (!consent) return setError("请确认你有权使用这张照片。");
+    if (provider !== "platform" && !apiKey.trim()) return setError("请填写本次使用的 API Key。");
+
+    setIsGenerating(true);
+    try {
+      const response = await fetch("/api/story/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          age,
+          templateId,
+          provider,
+          apiKey: provider === "platform" ? undefined : apiKey.trim(),
+        }),
+      });
+      const result = (await response.json()) as GenerateResponse & { error?: string };
+      if (!response.ok) throw new Error(result.error || "故事生成失败，请稍后再试。");
+      setPages(result.pages);
+      setNotice(result.notice || "");
+      setApiKey("");
+      setPageIndex(0);
+      setView("read");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "故事生成失败，请稍后再试。");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const readPage = () => {
+    if (!("speechSynthesis" in window)) return;
+    if (isSpeaking) return stopSpeaking();
     const narration = new SpeechSynthesisUtterance(
       [page.title, page.text, page.speaker, page.quote].filter(Boolean).join("。"),
     );
     narration.lang = "zh-CN";
     narration.rate = 0.88;
-    narration.pitch = 1.02;
     narration.onend = () => setIsSpeaking(false);
     narration.onerror = () => setIsSpeaking(false);
-    window.speechSynthesis.cancel();
     window.speechSynthesis.speak(narration);
     setIsSpeaking(true);
   };
@@ -184,116 +185,172 @@ export default function Home() {
     if (touchStart.current === null) return;
     const end = event.changedTouches[0]?.clientX ?? touchStart.current;
     const distance = end - touchStart.current;
-    if (Math.abs(distance) > 52) {
-      goToPage(pageIndex + (distance < 0 ? 1 : -1));
-    }
+    if (Math.abs(distance) > 52) goToPage(pageIndex + (distance < 0 ? 1 : -1));
     touchStart.current = null;
   };
 
-  return (
-    <main className="story-shell">
-      <div className="star-field" aria-hidden="true" />
+  const portraitStyle = {
+    "--portrait-zoom": photoZoom,
+    "--portrait-y": `${photoY}%`,
+  } as CSSProperties;
 
-      <header className="story-header">
-        <button className="brand" onClick={() => goToPage(0)} aria-label="回到封面">
-          <span className="brand-star">✦</span>
-          <span>
-            <strong>银河星桥</strong>
-            <small>年糕 × 糯米</small>
-          </span>
-        </button>
-        <div className="header-actions">
-          <span className="page-count" aria-live="polite">
-            {String(pageIndex + 1).padStart(2, "0")}
-            <i />
-            {String(storyPages.length).padStart(2, "0")}
-          </span>
-          <button
-            className={"listen-button" + (isSpeaking ? " is-speaking" : "")}
-            onClick={readPage}
-            aria-label={isSpeaking ? "停止朗读" : "朗读当前章节"}
-          >
-            <span aria-hidden="true">{isSpeaking ? "■" : "◖))"}</span>
-            {isSpeaking ? "停止" : "读给我听"}
+  if (view === "read") {
+    const faceStyle = {
+      "--face-x": `${page.face.x}%`,
+      "--face-y": `${page.face.y}%`,
+      "--face-size": `${page.face.size}%`,
+      "--face-rotate": `${page.face.rotate ?? 0}deg`,
+      ...portraitStyle,
+    } as CSSProperties;
+
+    return (
+      <main className="reader-shell">
+        <header className="reader-header">
+          <button className="brand-button" onClick={() => setView("create")}>
+            <span className="brand-mark">讲</span>
+            <span><strong>讲故事</strong><small>{name}的成长绘本</small></span>
           </button>
-        </div>
+          <div className="reader-actions">
+            <span className="privacy-chip">角色仅在本机生成</span>
+            <button className="quiet-button" onClick={readPage}>{isSpeaking ? "停止朗读" : "读给我听"}</button>
+            <button className="quiet-button" onClick={() => setView("create")}>重新制作</button>
+          </div>
+        </header>
+
+        {notice && <p className="reader-notice">{notice}</p>}
+
+        <section className="reader-stage" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+          <div className="reader-picture">
+            <Image src={page.image} alt={page.alt} fill priority={pageIndex < 2} sizes="100vw" />
+            <div className="reader-shade" />
+            {portraitUrl && (
+              <div className="face-slot" style={faceStyle} aria-label={`${name}的故事角色头像`}>
+                <Image src={portraitUrl} alt="" fill unoptimized sizes="12vw" />
+              </div>
+            )}
+            <button className="page-button previous" onClick={() => goToPage(pageIndex - 1)} disabled={pageIndex === 0} aria-label="上一页">←</button>
+            <button className="page-button next" onClick={() => goToPage(pageIndex + 1)} disabled={pageIndex === pages.length - 1} aria-label="下一页">→</button>
+          </div>
+          <article className={`reader-card align-${page.align}`}>
+            <p className="eyebrow">{page.chapter}</p>
+            <h1>{page.title}</h1>
+            <p>{page.text}</p>
+            {page.quote && (
+              <blockquote>“{page.quote}”{page.speaker && <cite>—— {page.speaker}</cite>}</blockquote>
+            )}
+          </article>
+        </section>
+
+        <nav className="reader-progress" aria-label="故事章节">
+          {pages.map((item, index) => (
+            <button key={item.chapter} className={index === pageIndex ? "active" : ""} onClick={() => goToPage(index)} aria-label={`前往第 ${index + 1} 页`}>
+              {index + 1}
+            </button>
+          ))}
+        </nav>
+      </main>
+    );
+  }
+
+  const coverFace = baseStoryPages[0].face;
+  const previewFaceStyle = {
+    "--face-x": `${coverFace.x}%`,
+    "--face-y": `${coverFace.y}%`,
+    "--face-size": `${coverFace.size}%`,
+    "--face-rotate": "0deg",
+    ...portraitStyle,
+  } as CSSProperties;
+
+  return (
+    <main className="creator-shell">
+      <header className="site-header">
+        <a className="brand-button" href="#top" aria-label="讲故事首页">
+          <span className="brand-mark">讲</span>
+          <span><strong>讲故事</strong><small>把孩子写进成长里</small></span>
+        </a>
+        <span className="privacy-chip">隐私优先 · 本机卡通化</span>
       </header>
 
-      <section
-        className={"book-spread align-" + page.align}
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-        aria-label={"故事第 " + (pageIndex + 1) + " 页"}
-      >
-        <div className="picture" key={page.image}>
-          <Image
-            src={page.image}
-            alt={page.alt}
-            fill
-            priority={pageIndex < 2}
-            sizes="100vw"
-          />
+      <section className="creator-hero" id="top">
+        <div className="hero-copy">
+          <p className="eyebrow">孩子是故事里的主角</p>
+          <h1>把熟悉的笑脸，<br />放进会成长的故事。</h1>
+          <p className="hero-intro">上传一张照片，浏览器会在本机生成保留五官的卡通角色，再把角色放进你选择的成长故事。照片不会发送到本站服务端或故事模型。</p>
+          <div className="promise-list">
+            <span><i>01</i>预先审核的成长主题</span>
+            <span><i>02</i>适合年龄的故事表达</span>
+            <span><i>03</i>可朗读的十页互动绘本</span>
+          </div>
+
+          <div className="cover-preview" aria-label="个性化绘本封面预览">
+            <Image src="/story/galaxy/01-cover.png" alt="银河星桥绘本封面" fill priority sizes="(max-width: 900px) 100vw, 56vw" />
+            <div className="cover-vignette" />
+            {portraitUrl && (
+              <div className="face-slot preview-face" style={previewFaceStyle}>
+                <Image src={portraitUrl} alt="孩子在绘本中的角色预览" fill unoptimized sizes="10vw" />
+              </div>
+            )}
+            <div className="preview-title"><small>{selectedTemplate.lesson}</small><strong>{name.trim() || "孩子"}的{selectedTemplate.title}</strong></div>
+          </div>
         </div>
-        <div className="picture-shade" aria-hidden="true" />
 
-        <article className={"story-card" + (pageIndex === 0 ? " cover-card" : "")}>
-          <p className="chapter-label">
-            <span>{page.chapter}</span>
-            <i />
-          </p>
-          <h1>{page.title}</h1>
-          <p className="narration">{page.text}</p>
-          {page.quote && (
-            <blockquote>
-              “{page.quote}”
-              {page.speaker && <cite>—— {page.speaker}</cite>}
-            </blockquote>
-          )}
-          {pageIndex === 0 && (
-            <button className="start-button" onClick={() => goToPage(1)}>
-              翻开星桥 <span aria-hidden="true">→</span>
-            </button>
-          )}
-          {pageIndex === storyPages.length - 1 && (
-            <button className="start-button replay" onClick={() => goToPage(0)}>
-              再读一遍 <span aria-hidden="true">↺</span>
-            </button>
-          )}
-        </article>
+        <form className="creator-card" onSubmit={generateStory}>
+          <div className="form-heading"><span>01</span><div><h2>制作第一本绘本</h2><p>大约需要 1 分钟</p></div></div>
 
-        <button
-          className="page-arrow page-arrow-left"
-          onClick={() => goToPage(pageIndex - 1)}
-          disabled={pageIndex === 0}
-          aria-label="上一页"
-        >
-          <span aria-hidden="true">←</span>
-        </button>
-        <button
-          className="page-arrow page-arrow-right"
-          onClick={() => goToPage(pageIndex + 1)}
-          disabled={pageIndex === storyPages.length - 1}
-          aria-label="下一页"
-        >
-          <span aria-hidden="true">→</span>
-        </button>
+          <label className="field-label" htmlFor="child-name">孩子的名字或昵称</label>
+          <input id="child-name" className="text-input" value={name} maxLength={12} onChange={(event) => setName(event.target.value)} placeholder="例如：小满" autoComplete="off" />
+
+          <div className="split-fields">
+            <label><span className="field-label">年龄</span><select className="text-input" value={age} onChange={(event) => setAge(Number(event.target.value))}>{Array.from({ length: 10 }, (_, index) => index + 3).map((item) => <option key={item} value={item}>{item} 岁</option>)}</select></label>
+            <label><span className="field-label">成长主题</span><input className="text-input" value={selectedTemplate.lesson} disabled /></label>
+          </div>
+
+          <fieldset className="template-fieldset">
+            <legend className="field-label">选择一个成长故事</legend>
+            <div className="template-grid">
+              {storyTemplates.map((template) => (
+                <button type="button" key={template.id} className={templateId === template.id ? "selected" : ""} onClick={() => setTemplateId(template.id)}>
+                  <span><strong>{template.title}</strong><small>{template.ageRange} · {template.lesson}</small></span>
+                  <i>{template.summary}</i>
+                </button>
+              ))}
+            </div>
+          </fieldset>
+
+          <label className={`photo-drop ${photoUrl ? "has-photo" : ""}`}>
+            <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onPhotoChange} />
+            {photoUrl ? (
+              <><span className="portrait-preview" style={portraitStyle}><Image src={portraitUrl} alt="孩子的角色预览" fill unoptimized sizes="72px" /></span><span><strong>{isCartoonizing ? "正在本机生成卡通角色…" : "照片已在本机处理"}</strong><small>点击可重新选择，原图不会上传</small></span></>
+            ) : (
+              <><span className="upload-icon">＋</span><span><strong>上传一张正面照片</strong><small>JPG、PNG 或 WebP，不超过 8MB</small></span></>
+            )}
+          </label>
+
+          {photoUrl && (
+            <>
+              <div className="portrait-mode" role="group" aria-label="角色效果">
+                <button type="button" className={portraitMode === "storybook" ? "selected" : ""} disabled={!cartoonUrl} onClick={() => setPortraitMode("storybook")}>绘本卡通</button>
+                <button type="button" className={portraitMode === "original" ? "selected" : ""} onClick={() => setPortraitMode("original")}>原始照片</button>
+                <span aria-live="polite">{isCartoonizing ? "只在当前浏览器处理" : cartoonUrl ? "卡通角色已生成" : "当前使用原始照片"}</span>
+              </div>
+              <div className="photo-controls">
+                <label>头像大小<input type="range" min="1" max="2" step="0.05" value={photoZoom} onChange={(event) => setPhotoZoom(Number(event.target.value))} /></label>
+                <label>上下位置<input type="range" min="30" max="70" step="1" value={photoY} onChange={(event) => setPhotoY(Number(event.target.value))} /></label>
+              </div>
+            </>
+          )}
+
+          <div className="provider-row">
+            <label><span className="field-label">故事模型</span><select className="text-input" value={provider} onChange={(event) => { setProvider(event.target.value as Provider); setApiKey(""); }}><option value="platform">平台模型（推荐）</option><option value="deepseek">我的 DeepSeek Key</option><option value="zhipu">我的智谱 API Key</option></select></label>
+            {provider !== "platform" && <label><span className="field-label">仅本次使用的 API Key</span><input className="text-input" type="password" value={apiKey} onChange={(event) => setApiKey(event.target.value)} autoComplete="off" placeholder="不会保存" /></label>}
+          </div>
+
+          <label className="consent-row"><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} /><span>我确认已获得照片使用授权，并同意在当前浏览器中制作绘本。</span></label>
+          {error && <p className="form-error" role="alert">{error}</p>}
+          <button className="generate-button" disabled={isGenerating || isCartoonizing}>{isCartoonizing ? "正在本机生成卡通角色…" : isGenerating ? "正在编织星光故事…" : "生成孩子的绘本"}<span>→</span></button>
+          <p className="form-footnote">卡通效果由当前浏览器本地生成，不使用云端图片模型，也不会保存照片。</p>
+        </form>
       </section>
-
-      <nav className="story-progress" aria-label="故事章节">
-        {storyPages.map((item, index) => (
-          <button
-            key={item.title}
-            className={index === pageIndex ? "active" : ""}
-            onClick={() => goToPage(index)}
-            aria-label={"前往第 " + (index + 1) + " 页：" + item.title}
-            aria-current={index === pageIndex ? "page" : undefined}
-          >
-            <span>{index + 1}</span>
-          </button>
-        ))}
-      </nav>
-
-      <p className="reading-hint">← → 翻页 · 轻扫画面 · 点击星点跳转</p>
     </main>
   );
 }
